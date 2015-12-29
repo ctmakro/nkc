@@ -7,3 +7,6 @@ nkc community project
 
   3. Start loopnode.bat
   4. Press Enter in cmd window to restart server
+
+# Should you have
+  - CouchDB listening on 5984
