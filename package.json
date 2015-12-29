@@ -1,0 +1,17 @@
+{
+  "name": "nkc",
+  "version": "1.0.0",
+  "description": "newkc",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.3",
+    "nano": "^6.1.5",
+    "request": "^2.67.0"
+  }
+}
