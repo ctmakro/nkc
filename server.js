@@ -142,12 +142,13 @@ function msgform(title,user,content)
   return JSON.stringify({'title':title,'user':user,'content':content});
 }
 
-//return copy of chatbox
+//chatroom HTML serving
 app.get('/chat',function(req,res){
   requestLog(req);
   res.sendFile(__dirname + '/chat.html');
 });
 
+//chatroom server
 //on connection
 io.on('connection',function(socket){
   var dstr = dateString();

@@ -30,9 +30,10 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
+
 var socket = io();
 var lines = [];
-//func on submit of form
+//on submit of form
 $('form').submit(function(){
 
   var estr = $('#tosend').val();//content string to be submitted
@@ -47,14 +48,14 @@ $('form').submit(function(){
   return false;
 });
 
-//func on retrieval of msg
+//on retrieval of msg
 socket.on('msg',function(msg){
   try{
     msg=JSON.parse(msg);
   }
   catch(err){
     //dont do a thing
-    report('json parse error',err);
+    console.log('json parse error',err);
     return;
   }
   lines.push(msg);
@@ -62,7 +63,7 @@ socket.on('msg',function(msg){
   while(lines.length>256)lines.shift();
 
   var temp='';
-  //append <li>tag + msg content to message section.
+  //generate then paste HTML content to message section.
   for(var i=0;i<lines.length;i++)
   {
     var temp2 = '<li style="color:#666">'
@@ -80,14 +81,15 @@ socket.on('msg',function(msg){
 
   //console.log($('#messages').height(),$('#wrap').scrollTop(),$('#wrap').height());
 
+  //autoscroll section
   //if current scrollbar position is far from 'bottom'
   if($('#wrap').scrollTop()<$('#messages').height()-$('#wrap').height()-300){
     //dont scroll down
-    console.log('stay');
+    //console.log('stay');
   }
   else{
     $('#wrap').scrollTop($('#messages').height()+300);//scroll all the way down
-    console.log('down');
+    //console.log('down');
   }
 });
 
