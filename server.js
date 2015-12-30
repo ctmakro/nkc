@@ -4,12 +4,14 @@ var settings = require('./nkc_modules/server_settings.js');
 var helpermod = require('./nkc_modules/helper.js')();
 var checkermod = require('./nkc_modules/checks.js')();
 
+var os = require('os');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 var nano = require('nano')('http://'+settings.couchdb.address+':'+settings.couchdb.port.toString());
 var posts = nano.use("posts");
+var chat = nano.use("chat");
 var counters = nano.use('counters');
 var request = require('request');
 
@@ -135,15 +137,16 @@ app.get('/thread/:tid', function (req, res) {
 ///-----------------------------------------
 ///socket.io.chat section
 
+function msgform(title,user,content)
+{
+  return JSON.stringify({'title':title,'user':user,'content':content});
+}
+
 //return copy of chatbox
 app.get('/chat',function(req,res){
   requestLog(req);
   res.sendFile(__dirname + '/chat.html');
 });
-
-function msgform(cont,titl){
-  return JSON.stringify({title:titl,content:cont});
-}
 
 //on connection
 io.on('connection',function(socket){
@@ -152,9 +155,26 @@ io.on('connection',function(socket){
 
   report('chat.user '+addr.toString());//new socket connected
 
-  io.emit('msg',msgform('# 来自 '+addr.toString()+' 已连接',dstr));
-  socket.emit('msg',msgform('# 欢迎试用KC聊天室[施工中]',dstr));
-  socket.emit('msg',msgform('# todo:历史记录',dstr));
+  //load chat history from database
+  chat.view('history','history',{descending:true,limit:256},
+  function(err,body){
+    if(!err){
+      //  send them back to user
+      var i = body.rows.length;
+      while(i--)
+      {
+        var doc = body.rows[i].value;
+        socket.emit('msg',msgform(dateString(doc.t),doc.u,doc.c));
+      }
+    }
+
+    //show welcome messages after loading db
+    io.emit('msg',msgform(dstr,'#','来自 '+addr.toString()+' 已连接'));
+    socket.emit('msg',msgform(dstr,'#','欢迎访问KC聊天室[施工中]\n\
+    本聊天室保存所有历史记录，每次刷新载入之前256条\n\
+    请在右下角填写您的昵称\n\
+    科创网络局期待您的加入，我们准备好了工资福利，有意请联系论坛novakon同学'));
+  });
 
   socket.on('disconnect',function(){
     report('chat.user.disconn '+addr.toString());
@@ -162,7 +182,8 @@ io.on('connection',function(socket){
 
   //on incoming message
   socket.on('msg',function(msg){
-    var dstr=dateString();
+    var datenow = Date.now();
+    var dstr=dateString(datenow);
     var msgobj={};
     try{
       msgobj = JSON.parse(msg);
@@ -173,17 +194,51 @@ io.on('connection',function(socket){
     }
 
     var content = msgobj.content;
-    var sender = msgobj.name;
+    var sender = msgobj.user;
+
+    if(content == '/info'){
+      socket.emit('msg',msgform(dstr,'#',content));
+      socket.emit('msg',msgform(dstr,'#',JSON.stringify(osinfo(),null,'\t')));
+      return;
+    }
+
+    if(content.trim()==""){
+      return;
+    }
 
     //form the msg object to send to client
-    var jsonmsg = msgform(content,dstr+" "+sender);
+    var jsonmsg = msgform(dstr,sender,content);
 
     //send event 'msg' to every 'socket' within 'io'
     io.emit('msg',jsonmsg);
     report('chat->'+msg);
-  });
 
+    //build a doc describing a chat message
+    var chatdoc={t:datenow,u:sender,c:content,ad:addr};
+    //log into db
+    chat.insert(chatdoc,function(err,body){
+      if(!err)
+      {  //unlikely
+      }
+    });
+  });
 });
+
+///----
+///osinfo helper
+function osinfo(){
+  var kv={};
+  Object.keys(os).map(function(method) {
+    try{
+      kv[method] = os[method]();
+    }
+    catch(err){
+      report('err during \'os\' listing',err);
+      kv[method] = os[method];
+    }
+  });
+  return kv;
+}
 
 ///------------------------------------------
 ///start server
@@ -192,6 +247,8 @@ var server = http.listen(1080, function () {
   var port = server.address().port;
   dash();
   console.log("%s "+settings.server.name+' listening at %s port %s',dateString(), host, port);
+
+  //console.log(JSON.stringify(osinfo(),null,'\t'));
 });
 
 //end process after pressing ENTER, for debug purpose
