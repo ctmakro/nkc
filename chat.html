@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <title>nkc.chat.prototype</title>
+  <style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font: 13px Helvetica, Arial; }
+  form { background: rgb(90,30,0); padding: 4px; position: fixed; bottom: 0; width: 100%; }
+  #tosend { border: 0; padding:10px; width: 60%; margin:0px;}
+  #username { border: 0; padding:10px; width: 20%;margin:0px; }
+  form button { width:20%; background: rgb(233, 100, 40); border: none; padding:10px; }
+  #im {position:fixed; top:0;}
+  #messages { top:114px;bottom:41px;width:100%;position:fixed;list-style-type: none; margin: 0; padding: 0; overflow:scroll; }
+  #messages li { padding: 5px 10px; }
+  #messages li:nth-child(odd) { background: rgb(255,249,243); }
+  </style>
+</head>
+<body>
+  <img id="im" src=http://bbs.kechuang.org/themes/site/dingzhi/images/logo.png></img>
+  <ul id="messages"></ul>
+  <form action="">
+    <input id="tosend" autocomplete="off" /><input id="username" autocomplete="off" value="匿名"/><button>Send</button>
+  </form>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+var socket = io();
+var lines = [];
+//func on submit of form
+$('form').submit(function(){
+
+  var estr = $('#tosend').val();//content string to be submitted
+  var nstr = $('#username').val();//name string to be submitted
+
+  estr=JSON.stringify({name:nstr,content:estr});
+  socket.emit('msg',estr);
+  //emit an event, thru socket, with the help of socket.io
+  //'msg' is event key, '.val()' is event value
+
+  $('#tosend').val('');//clr text
+  return false;
+});
+
+//func on retrieval of msg
+socket.on('msg',function(msg){
+  try{
+    msg=JSON.parse(msg);
+  }
+  catch(err){
+    //dont do a thing
+    report('json parse error',err);
+    return;
+  }
+  lines.push(msg);
+  if(lines.length>255)lines.shift();
+  var temp='';
+  //append <li>tag + msg content to message section.
+  for(var i=0;i<lines.length;i++)
+  {
+    temp = temp + '<li>'+$('<p>').text(lines[i].title+' - '+lines[i].content).html()+'</li>';
+  }
+
+  $('#messages').html(temp);
+});
+
+</script>
+</html>

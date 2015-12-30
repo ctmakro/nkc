@@ -1,9 +1,13 @@
+var moment = require('moment');
+
 var settings = require('./nkc_modules/server_settings.js');
 var helpermod = require('./nkc_modules/helper.js')();
 var checkermod = require('./nkc_modules/checks.js')();
 
-var express = require('express');
-var app = express();
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+
 var nano = require('nano')('http://'+settings.couchdb.address+':'+settings.couchdb.port.toString());
 var posts = nano.use("posts");
 var counters = nano.use('counters');
@@ -108,6 +112,8 @@ app.get('/thread/:tid', function (req, res) {
 
   var tid=req.params.tid;//thread id
 
+  if(tid=='12647'){res.send('dont try again pls');return;}
+
   posts.view('thread','thread',{startkey:[parseInt(tid),0],endkey:[parseInt(tid),11111111111]},
   function(err,body){
     if(!err)
@@ -126,12 +132,66 @@ app.get('/thread/:tid', function (req, res) {
   });
 });
 
+///-----------------------------------------
+///socket.io.chat section
+
+//return copy of chatbox
+app.get('/chat',function(req,res){
+  requestLog(req);
+  res.sendFile(__dirname + '/chat.html');
+});
+
+function msgform(cont,titl){
+  return JSON.stringify({title:titl,content:cont});
+}
+
+//on connection
+io.on('connection',function(socket){
+  var dstr = dateString();
+  var addr = socket.request.connection.remoteAddress;
+
+  report('chat.user '+addr.toString());//new socket connected
+
+  io.emit('msg',msgform('# 来自 '+addr.toString()+' 已连接',dstr));
+  socket.emit('msg',msgform('# 欢迎试用KC聊天室[施工中]',dstr));
+  socket.emit('msg',msgform('# todo:历史记录',dstr));
+
+  socket.on('disconnect',function(){
+    report('chat.user.disconn '+addr.toString());
+  });
+
+  //on incoming message
+  socket.on('msg',function(msg){
+    var dstr=dateString();
+    var msgobj={};
+    try{
+      msgobj = JSON.parse(msg);
+    }
+    catch(err){
+      report('err parsing json[from socket]',err);
+      return;
+    }
+
+    var content = msgobj.content;
+    var sender = msgobj.name;
+
+    //form the msg object to send to client
+    var jsonmsg = msgform(content,dstr+" "+sender);
+
+    //send event 'msg' to every 'socket' within 'io'
+    io.emit('msg',jsonmsg);
+    report('chat->'+msg);
+  });
+
+});
+
 ///------------------------------------------
 ///start server
-var server = app.listen(1080, function () {
+var server = http.listen(1080, function () {
   var host = server.address().address;
   var port = server.address().port;
-  console.log(settings.server.name+' listening at %s port %s', host, port);
+  dash();
+  console.log("%s "+settings.server.name+' listening at %s port %s',dateString(), host, port);
 });
 
 //end process after pressing ENTER, for debug purpose

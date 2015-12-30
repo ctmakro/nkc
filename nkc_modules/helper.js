@@ -1,5 +1,11 @@
 //helper module
+var moment = require('moment');
 module.exports = function(){
+
+  //dashline generator
+  this.dash=function(){
+    console.log("-------------------------------------------------------");
+  };
 
   //reformat a post after retrieval
   this.postRepack = function(p){
@@ -17,23 +23,42 @@ module.exports = function(){
   //request logger
   this.requestLog = function (req){
     var d=new Date();
-    console.log("-------------------------------------------------------");
-    console.log(
-      d.getFullYear(),d.getMonth()+1,d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds(),
-      req.ip,req.method,req.originalUrl
-    );
-  };
+    dash();
+    console.log(dateString(d),
+    req.ip,req.method,req.originalUrl
+  );
+};
 
-  //error reporter
-  this.report = function(description,error){
-    if(error){
-      console.log("err:",description);
-      console.log(error);
-      return({'error':description});
-    }else{
-      console.log("msg:",description);
-      return({message:description});
-    }
-  };
+//error reporter
+this.report = function(description,error){
+  if(error){
+    console.log(dateString(),"err:",description);
+    console.log(error);
+    return({'error':description});
+  }else{
+    console.log(dateString(),"msg:",description);
+    return({message:description});
+  }
+};
+
+//datestring generator
+this.dateString = function(date){
+var dateformat="YYYY-MM-DD HH:mm:ss";
+
+  if(date)//if input contains date
+  {
+    return moment(date).format(dateformat);
+    return (date.toISOString().
+    replace('T', ' ').      // replace T with a space
+    substr(0,19));
+  }
+  else
+  {
+    return moment().format(dateformat);
+    return (new Date().toISOString().
+    replace('T', ' ').      // replace T with a space
+    substr(0,19)); //delete trails
+  }
+};
 
 }
