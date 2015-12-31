@@ -148,6 +148,12 @@ app.get('/chat',function(req,res){
   res.sendFile(__dirname + '/chat.html');
 });
 
+//chatroom HTML serving
+app.get('/jquery-1.11.1.js',function(req,res){
+  requestLog(req);
+  res.sendFile(__dirname + '/jquery-1.11.1.js');
+});
+
 //chatroom server
 //on connection
 io.on('connection',function(socket){
