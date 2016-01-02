@@ -154,13 +154,18 @@ app.get('/jquery-1.11.1.js',function(req,res){
   res.sendFile(__dirname + '/jquery-1.11.1.js');
 });
 
+var usercount=0;
+
 //chatroom server
 //on connection
 io.on('connection',function(socket){
   var dstr = dateString();
   var addr = socket.request.connection.remoteAddress;
+  usercount++;
+  report('chat.total.user(s):'+usercount.toString()+" "+addr.toString());//new socket connected
 
-  report('chat.user '+addr.toString());//new socket connected
+  //indicates a reconnection
+  socket.emit('reconnection','');
 
   //load chat history from database
   chat.view('history','history',{descending:true,limit:256},
@@ -174,16 +179,17 @@ io.on('connection',function(socket){
         socket.emit('msg',msgform(dateString(doc.t),doc.u,doc.c));
       }
     }
-
     //show welcome messages after loading db
-    io.emit('msg',msgform(dstr,'#','来自 '+addr.toString()+' 已连接'));
+    //io.emit('msg',msgform(dstr,'#',addr.toString()+' 已连接 - 已有'+usercount.toString()+'用户'));
     socket.emit('msg',msgform(dstr,'#','欢迎访问KC聊天室[施工中]\n\
     本聊天室保存所有历史记录，每次刷新载入之前256条\n\
     请在右下角填写您的昵称\n\
     科创网络局期待您的加入，我们准备好了工资福利，有意请联系论坛novakon同学'));
+
   });
 
   socket.on('disconnect',function(){
+    usercount--;
     report('chat.user.disconn '+addr.toString());
   });
 
@@ -209,7 +215,15 @@ io.on('connection',function(socket){
       return;
     }
 
-    if(content.trim()==""){
+    if(content=='/stat'){
+      socket.emit('msg',msgform(dstr,'#',content));
+      var stat='';
+      stat+='目前共有'+usercount.toString()+'用户';
+      socket.emit('msg',msgform(dstr,'#',stat));
+      return;
+    }
+
+    if(content.trim()=="" || sender.trim()==""){
       return;
     }
 
