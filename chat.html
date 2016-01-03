@@ -22,7 +22,7 @@
   #messages {list-style-type: none;width:100%;}
   .line{width:100%; clear:both; color:#888;}
 
-  .divp {width:6%; max-width: 72px;float:left; margin:3px;
+  .divp {width:6%; max-width: 72px;float:left; margin:3px; margin-right:10px;
     display:inline-block;}
     .divi {width:100%;border-radius: 12%; overflow: hidden ;}
     .divm {width:80%; display:inline-block;float:left;}
@@ -106,7 +106,7 @@
         uidstring = "";
       }
     }
-
+    var defaultavatar="http://bbs.kechuang.org/res/images/face/face_middle.jpg";
     var avatarstring="";
     //generate avatar string if uid valid
     if(uidstring!="")
@@ -118,10 +118,12 @@
       avatarstring = "http://bbs.kechuang.org/windid/attachment/avatar/000/"
       +wan+"/"+bai+"/"+uidstring+"_middle.jpg";
     }else{
-      avatarstring="http://bbs.kechuang.org/res/images/face/face_middle.jpg";//default avatar
+      avatarstring=defaultavatar;//default avatar
     }
 
-    avatarstring = '<div class="divp"><img class="divi"src="'+avatarstring+'"></div>';
+    avatarstring = '<div class="divp"><img class="divi" src="'
+    +avatarstring
+    +'" onerror="this.src=\''+defaultavatar+'\';"></div>';
     //console.log(avatarstring);
 
     //generate color according to uidstring

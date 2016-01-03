@@ -173,7 +173,7 @@ io.on('connection',function(socket){
   socket.emit('reconnection','');
 
   //load chat history from database
-  chat.view('history','history',{descending:true,limit:256},
+  chat.view('history','history',{descending:true,limit:128},
   function(err,body){
     if(!err){
       //  send them back to user
@@ -187,7 +187,7 @@ io.on('connection',function(socket){
     //show welcome messages after loading db
     //io.emit('msg',msgform(dstr,'#',addr.toString()+' 已连接 - 已有'+usercount.toString()+'用户'));
     socket.emit('msg',msgform(dstr,'#','欢迎访问KC聊天室[施工中]\n\
-    本聊天室保存所有历史记录，每次刷新载入之前256条\n\
+    本聊天室保存所有历史记录，每次刷新载入之前128条\n\
     右下角填写论坛id可显示头像\n\
     科创网络局期待您的加入，我们准备好了工资福利，有意请联系论坛novakon同学'));
   });
