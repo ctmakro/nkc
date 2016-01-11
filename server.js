@@ -187,9 +187,10 @@ io.on('connection',function(socket){
     //show welcome messages after loading db
     //io.emit('msg',msgform(dstr,'#',addr.toString()+' 已连接 - 已有'+usercount.toString()+'用户'));
     socket.emit('msg',msgform(dstr,'#','欢迎访问KC聊天室[施工中]\n\
-    本聊天室保存所有历史记录，每次刷新载入之前128条\n\
+    本聊天室保存所有历史记录，刷新载入最近128条\n\
     右下角填写论坛id可显示头像\n\
-    科创网络局期待您的加入，我们准备好了工资福利，有意请联系论坛novakon同学'));
+    科创论坛互联网中心期待您的加入，我们准备好了工资福利，有意请联系论坛novakon同学\n\
+    您可以使用配对的[tex]标签包含以LaTeX表示的数学公式，以及用配对的[smi]标签包含以SMILES表示的化学结构式，以及[cas]包含CAS编号……'));
   });
 
   socket.on('disconnect',function(){
