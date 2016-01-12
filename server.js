@@ -150,13 +150,13 @@ function msgform(title,user,content,misc)
 //chatroom HTML serving
 app.get('/chat',function(req,res){
   requestLog(req);
-  res.sendFile(__dirname + '/chat.html');
+  res.sendFile(__dirname + '/html/chat.html');
 });
 
 //chatroom HTML serving
 app.get('/jquery-1.11.1.js',function(req,res){
   requestLog(req);
-  res.sendFile(__dirname + '/jquery-1.11.1.js');
+  res.sendFile(__dirname + '/html/jquery-1.11.1.js');
 });
 
 var usercount=0;
