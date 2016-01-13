@@ -1,10 +1,11 @@
+module.paths.push('./nkc_modules'); //enable require-ment for this path
+
 var moment = require('moment');
 
-var settings = require('./nkc_modules/server_settings.js');
-var helpermod = require('./nkc_modules/helper.js')();
-var checkermod = require('./nkc_modules/checks.js')();
+var settings = require('server_settings.js');
+var helper_mod = require('helper.js')();
+var validation = require('validation.js');
 
-var os = require('os');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -16,128 +17,11 @@ var users = nano.use("users");
 var counters = nano.use('counters');
 var request = require('request');
 
-///----------------------------------------
-///GET /posts/* handler
-app.get('/posts/:pid', function (req, res) {
-  requestLog(req);//log
+var api_handlers = require('api_handlers.js');
+app.use('/api',api_handlers);
 
-  var pid=req.params.pid;//retrieve pid as parameter
-
-  //get the post from db
-  posts.get(pid,{},function(err,body){
-    if(!err)
-    {//if nothing wrong
-      report(pid.toString()+' is hit');
-      var result=postRepack(body);
-      res.json(report(result));
-    }
-    else
-    {//if error happened
-      res.json(report('pid not found within /posts/',err));
-    }
-  });
-});
-
-///------------------------------------------
-/// POST /posts handler
-app.post('/posts',function(req,res)
-{
-  requestLog(req);//log
-
-  //receive post body
-  var requestBody=[];
-  req.on('error', function(err){
-    report('error receiving body',err)
-  }).on('data', function(chunk) {
-    requestBody.push(chunk);
-  }).on('end', function() {
-    requestBody = Buffer.concat(requestBody).toString();
-    //body fully received
-    report('request body received');
-    report(requestBody);
-
-    var requestObject={};
-    try {
-      requestObject = JSON.parse(requestBody);
-    }
-    catch(err){
-      res.json(report('error parsing json',err));//if body is not JSON, exit
-      return;
-    }
-    report('json successfully parsed');
-
-    //check if object is legal (contains enough fields)
-    if(validatePost(requestObject)){
-      //if okay, don't do a thing
-    }else{
-      res.json(report('bad field/illegal input',requestObject));
-      return;
-    }
-
-    //obtain a pid by atomically incrementing the postcount document
-    counters.atomic("counters",'counters','postcount',{},function(err,body)
-    {
-      if(!err)
-      {
-        report('postcount given:'+body.toString());
-
-        //construct new post document
-        var newpost={};
-        newpost._id=body.toString();
-        newpost.content=requestObject.content;
-        newpost.toc=Date.now();
-
-        //insert the document into db
-        posts.insert(newpost,function(err,body)
-        {
-          if(!err)//if succeed
-          {
-            report('insert succeed');
-            res.json(report({status:"succeed",id:newpost._id}));
-          }
-          else
-          {
-            res.json(report('error inserting',err));
-          }
-        });
-      }
-      else
-      {//if unable to obtain
-        res.json(report("failed to obtain atomically incrementing postcount",err));
-      }
-    });
-  });
-});
-
-///----------------------------------------
-///GET /thread/* handler
-app.get('/thread/:tid', function (req, res) {
-  requestLog(req);
-
-  var tid=req.params.tid;//thread id
-
-  if(tid=='12647'){res.send('dont try again pls');return;}
-
-  posts.view('thread','thread',{startkey:[parseInt(tid),0],endkey:[parseInt(tid),11111111111]},
-  function(err,body){
-    if(!err)
-    {//if nothing went wrong
-      for(var i = 0, size = body.rows.length; i < size ; i++){
-        var item = body.rows[i];
-        body.rows[i]=postRepack(item.value);
-      }
-      res.json({'tid':tid,'posts':body.rows});
-    }
-    else {//if error happened
-      console.log(tid,'is notfound within /thread/*, or other error');
-      console.log(err);
-      res.json({error:"notfound"});
-    }
-  });
-});
-
-///-----------------------------------------
-///socket.io.chat section
+var chat_handlers = require('chat_handlers.js')
+app.use('/chat',chat_handlers);
 
 function msgform(title,user,content,misc)
 {
@@ -147,18 +31,6 @@ function msgform(title,user,content,misc)
   return JSON.stringify({'title':title,'user':user,'content':content});
 }
 
-//chatroom HTML serving
-app.get('/chat',function(req,res){
-  requestLog(req);
-  res.sendFile(__dirname + '/html/chat.html');
-});
-
-//chatroom HTML serving
-app.get('/jquery-1.11.1.js',function(req,res){
-  requestLog(req);
-  res.sendFile(__dirname + '/html/jquery-1.11.1.js');
-});
-
 var usercount=0;
 
 //chatroom server
@@ -167,9 +39,9 @@ io.on('connection',function(socket){
   var dstr = dateString();
   var addr = socket.request.connection.remoteAddress;
   usercount++;
-  report('chat.total.user(s):'+usercount.toString()+" "+addr.toString());//new socket connected
+  report('io.total_users:'+usercount.toString()+" "+addr.toString());//new socket connected
 
-  //indicates a reconnection
+  //tell client this is a reconnection
   socket.emit('reconnection','');
 
   //load chat history from database
@@ -275,31 +147,13 @@ io.on('connection',function(socket){
   });
 });
 
-///----
-///osinfo helper
-function osinfo(){
-  var kv={};
-  Object.keys(os).map(function(method) {
-    try{
-      kv[method] = os[method]();
-    }
-    catch(err){
-      report('err during \'os\' listing',err);
-      kv[method] = os[method];
-    }
-  });
-  return kv;
-}
-
 ///------------------------------------------
 ///start server
-var server = http.listen(1080, function () {
+var server = http.listen(settings.server.port, function () {
   var host = server.address().address;
   var port = server.address().port;
   dash();
   console.log("%s "+settings.server.name+' listening at %s port %s',dateString(), host, port);
-
-  //console.log(JSON.stringify(osinfo(),null,'\t'));
 });
 
 //end process after pressing ENTER, for debug purpose
