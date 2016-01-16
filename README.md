@@ -1,6 +1,6 @@
 # nkc
-nkc community project.
-currently under construction
+original nkc community project.
+abandoned, choosing CouchDB instead of ArangoDB
 
 # First steps
   1. Install Node.js for your system
@@ -11,3 +11,4 @@ currently under construction
 
 # Should you have
   - CouchDB listening on 5984
+  - several design document inserted, for queries. not included

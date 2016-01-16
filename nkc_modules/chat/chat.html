@@ -105,7 +105,9 @@
 <script src="/chat/jquery-1.11.1.js"></script>
 <script>
 
-var socket = io();
+var socket = io.connect(document.URL);//namespacing
+//console.log(document.URL);
+
 var lines = [];
 
 //on submit of form

@@ -79,4 +79,12 @@ module.exports = function(){
     });
     return kv;
   };
+
+  this.msgform = function(title,user,content,misc)
+  {
+    if(misc){
+      return JSON.stringify({'title':title,'user':user,'content':content,'misc':misc});
+    }
+    return JSON.stringify({'title':title,'user':user,'content':content});
+  };
 }

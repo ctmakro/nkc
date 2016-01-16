@@ -143,4 +143,4 @@ api.get('/thread/:tid', function (req, res) {
   });
 });
 
-module.exports = api;
+exports.route_handler = api;
